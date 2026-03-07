@@ -1,13 +1,13 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from utils.cleanup import auto_delete
 import asyncio
+from utils.cleanup import auto_delete
 
 
 WELCOME_TEXT = """
 ✨ <b>Welcome, {name}!</b>
 
-<u><b>ExecutiieBot — Story Audio Index Bot</b></u> 🤖
+<b>ExecutiieBot — Story Audio Index Bot</b> 🤖
 
 <b>Commands:</b> /latest • /help • /request • /about • /stories
 
@@ -49,7 +49,10 @@ def register_start(app):
             reply_markup=buttons
         )
 
-        await message.delete()
+        try:
+            await message.delete()
+        except:
+            pass
 
         asyncio.create_task(
             auto_delete(
