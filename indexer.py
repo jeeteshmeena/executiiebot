@@ -1,7 +1,9 @@
 import re
 from db import episodes
 
-CHANNEL_ID = -100xxxxxxxxxx
+# यहाँ अपना database channel id डालो
+CHANNEL_ID = -1003714374498
+
 
 async def index_channel(bot):
 
