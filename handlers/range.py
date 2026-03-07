@@ -1,36 +1,45 @@
-from database.mongo import episodes
-from utils.cleanup import auto_delete
-import asyncio
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from db import episodes
 
-def register_range(app):
 
-    @app.on_callback_query()
-    async def range_handler(client, query):
+def register_range(bot: Client):
 
-        if not query.data.startswith("range"):
-            return
+    @bot.on_callback_query(filters.regex("^range_"))
+    async def send_range(client, query):
 
-        data = query.data.split("|")
+        data = query.data.split("_")
 
         story = data[1]
         start = int(data[2])
         end = int(data[3])
 
-        eps = episodes.find({
-            "story": story,
-            "episode": {"$gte": start, "$lte": end}
-        }).sort("episode", 1)
+        await query.answer()
 
-        sent = []
+        # strict story filter + episode sorting
+        eps = []
 
-        async for ep in eps:
+        async for ep in episodes.find(
+            {
+                "story": story,
+                "episode": {"$gte": start, "$lte": end}
+            }
+        ).sort("episode", 1):
 
-            m = await query.message.reply_audio(ep["file_id"])
-            sent.append(m.id)
+            eps.append(ep)
 
-        asyncio.create_task(auto_delete(
-            client,
-            query.message.chat.id,
-            sent,
-            21600
-        ))
+        if not eps:
+            await query.message.reply_text("No episodes found.")
+            return
+
+        for ep in eps:
+
+            file_id = ep["file_id"]
+
+            try:
+
+                await query.message.reply_audio(file_id)
+
+            except Exception:
+
+                await query.message.reply_document(file_id)
