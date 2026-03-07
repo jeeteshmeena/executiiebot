@@ -1,14 +1,38 @@
-
-from pyrogram import filters
+from pyrogram import Client, filters
 from database.mongo import stories
-import datetime
+from datetime import datetime, timedelta
 
-def register_latest(bot):
-    @bot.on_message(filters.command("latest"))
-    async def latest_handler(client, message):
-        day = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
-        data = stories.find({"created_at": {"$gte": day}})
-        text = "🆕 Latest Stories\n\n"
-        async for s in data:
-            text += f"{s['story_name']}\n"
-        await message.reply_text(text)
+@Client.on_message(filters.command("latest"))
+async def latest_handler(client, message):
+
+    since = datetime.utcnow() - timedelta(hours=24)
+
+    cursor = stories.find({
+        "updated_at": {"$gte": since}
+    })
+
+    names = []
+
+    async for s in cursor:
+        names.append(s["title"])
+
+    if not names:
+
+        text = """
+📢 <b>Here are the latest uploads!</b>
+
+<i>No new stories uploaded in the last 24 hours.</i>
+"""
+    else:
+
+        story_list = "\n".join([f"{i+1}. {n}" for i,n in enumerate(names)])
+
+        text = f"""
+📢 <b>Here are the latest uploads!</b>
+
+🆕 <b>We've gathered the newest releases for you.</b>
+
+{story_list}
+"""
+
+    await message.reply_text(text, parse_mode="html")
