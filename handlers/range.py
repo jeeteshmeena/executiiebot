@@ -1,35 +1,39 @@
-from pyrogram import Client, filters
+from pyrogram import Client
 from pyrogram.types import CallbackQuery
 from database.mongo import episodes
-
+from utils.cleanup import auto_delete
+import asyncio
 
 async def send_range(client: Client, query: CallbackQuery):
 
-    try:
-        data = query.data.split("|")
+    data = query.data.split("|")
 
-        story = data[1]
-        start = int(data[2])
-        end = int(data[3])
+    story = data[1]
+    start = int(data[2])
+    end = int(data[3])
 
-        eps = episodes.find({
-            "story": story,
-            "episode": {"$gte": start, "$lte": end}
-        }).sort("episode", 1)
+    eps = episodes.find({
+        "story": story,
+        "episode": {"$gte": start, "$lte": end}
+    }).sort("episode", 1)
 
-        async for ep in eps:
+    sent = []
 
-            file_id = ep["file_id"]
+    async for ep in eps:
 
-            # AUDIO send
-            await query.message.reply_audio(file_id)
+        m = await query.message.reply_audio(ep["file_id"])
+        sent.append(m.id)
 
-    except Exception as e:
-        print(e)
-
+    asyncio.create_task(auto_delete(
+        client,
+        query.message.chat.id,
+        sent,
+        21600
+    ))
 
 def register_range(app: Client):
 
-    @app.on_callback_query(filters.regex("^range"))
+    @app.on_callback_query()
     async def range_handler(client, query: CallbackQuery):
-        await send_range(client, query)
+        if query.data.startswith("range"):
+            await send_range(client, query)
