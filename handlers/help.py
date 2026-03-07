@@ -2,7 +2,6 @@ from pyrogram import filters
 import asyncio
 from utils.cleanup import auto_delete
 
-
 HELP_TEXT = """
 📚 <b>Search Help</b>
 
@@ -14,12 +13,8 @@ Example → <code>Yakshini</code>
 <i>Story Name Episode Number</i>
 Example → <code>Yakshini 12</code>
 
-<b>Tip:</b>
-<i>Add keywords like episode / part</i>
-
 🍿 <b>Send your query now!</b>
 """
-
 
 def register_help(app):
 
@@ -37,10 +32,5 @@ def register_help(app):
             pass
 
         asyncio.create_task(
-            auto_delete(
-                client,
-                message.chat.id,
-                [msg.id],
-                600
-            )
+            auto_delete(client, message.chat.id, [msg.id], 600)
         )
