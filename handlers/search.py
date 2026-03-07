@@ -1,27 +1,29 @@
-from pyrogram import filters
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.mongo import stories
-from utils.buttons import create_range_buttons
 
-def register_search(bot):
+@Client.on_message(filters.text & ~filters.command(["start","help","about","latest","stories","request"]))
+async def search(client, message):
 
-    @bot.on_message(filters.text & ~filters.command(["start","help","stories","latest","request"]))
-    async def search(client, message):
+    query = message.text.strip()
 
-        query = message.text.lower()
+    story = await stories.find_one({"title":{"$regex":query,"$options":"i"}})
 
-        story = await stories.find_one({
-            "story_name": {"$regex": query, "$options": "i"}
-        })
+    if not story:
 
-        if not story:
-            return
+        buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔎 Google Search", url=f"https://www.google.com/search?q={query}"),
+                InlineKeyboardButton("📩 Contact Admin", url="https://t.me/MeJeetX")
+            ]
+        ])
 
-        total = story["total"]
+        text = f"""
+<b>{query}</b>
 
-        keyboard = create_range_buttons(total)
+❗️ <b>File Not Found</b>
 
-        await message.reply_text(
-            f"📖 {story['story_name']} | {story['platform']}\n"
-            f"Episodes: {total}",
-            reply_markup=keyboard
-        )
+📝 <i>Check the spelling or try searching with the exact title.</i>
+"""
+
+        await message.reply_text(text, reply_markup=buttons)
