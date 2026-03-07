@@ -1,0 +1,7 @@
+
+pyrogram
+tgcrypto
+motor
+pymongo
+python-dotenv
+flask
