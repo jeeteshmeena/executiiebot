@@ -1,16 +1,23 @@
 import os
 import asyncio
 import threading
-
 from flask import Flask
-from pyrogram import Client
-from pyrogram import idle
+from pyrogram import Client, idle
+from pyrogram.errors import FloodWait
 
 
-API_ID = int(os.environ.get("API_ID"))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+# =========================
+# Environment variables
+# =========================
 
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+
+# =========================
+# Telegram Bot
+# =========================
 
 bot = Client(
     "ExecutiieBot",
@@ -20,30 +27,65 @@ bot = Client(
 )
 
 
-# Flask health server (Render requirement)
-app = Flask(__name__)
+# =========================
+# Flask health server
+# =========================
 
-@app.route("/")
+web = Flask(__name__)
+
+@web.route("/")
 def home():
-    return "ExecutiieBot Running"
+    return "ExecutiieBot is running"
 
 
 def run_web():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.getenv("PORT", 10000))
+    web.run(host="0.0.0.0", port=port)
 
+
+# =========================
+# Bot runner
+# =========================
 
 async def run_bot():
-    await bot.start()
-    print("Bot connected to Telegram")
-    await idle()
-    await bot.stop()
 
+    while True:
+
+        try:
+
+            await bot.start()
+
+            print("✅ Bot connected to Telegram")
+
+            await idle()
+
+            await bot.stop()
+
+        except FloodWait as e:
+
+            wait_time = int(e.value)
+
+            print(f"⚠ FloodWait detected. Sleeping {wait_time} seconds")
+
+            await asyncio.sleep(wait_time)
+
+        except Exception as err:
+
+            print("❌ Bot crashed:", err)
+
+            await asyncio.sleep(10)
+
+
+# =========================
+# Main
+# =========================
 
 if __name__ == "__main__":
 
-    # run flask server
+    print("🚀 ExecutiieBot starting...")
+
+    # run Flask health server
     threading.Thread(target=run_web).start()
 
-    # run bot
+    # run Telegram bot
     asyncio.run(run_bot())
