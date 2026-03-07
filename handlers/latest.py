@@ -1,54 +1,35 @@
-from pyrogram import filters
-from database.mongo import stories
+from pyrogram import Client, filters
+from db import episodes
 from datetime import datetime, timedelta
-import asyncio
-from utils.cleanup import auto_delete
 
-def register_latest(app):
 
-    @app.on_message(filters.command("latest"))
+def register_latest(bot: Client):
+
+    @bot.on_message(filters.command("latest"))
     async def latest_handler(client, message):
 
         since = datetime.utcnow() - timedelta(hours=24)
 
-        cursor = stories.find({
-            "updated_at": {"$gte": since}
-        })
+        stories = []
 
-        names = []
+        async for ep in episodes.find(
+            {"created_at": {"$gte": since}}
+        ):
 
-        async for s in cursor:
-            names.append(s["title"])
+            if ep["story"] not in stories:
+                stories.append(ep["story"])
 
-        if not names:
+        if not stories:
 
-            text = """
-📢 <b>Here are the latest uploads!</b>
-
-<i>No new stories uploaded in the last 24 hours.</i>
-"""
-
-        else:
-
-            story_list = "\n".join(
-                [f"{i+1}. {n}" for i, n in enumerate(names)]
+            await message.reply_text(
+                "📢 No new uploads in last 24 hours."
             )
+            return
 
-            text = f"""
-📢 <b>Here are the latest uploads!</b>
+        text = "**📢 Here are the latest uploads!**\n\n"
 
-🆕 <b>We've gathered the newest releases for you.</b>
+        for i, s in enumerate(stories, 1):
 
-{story_list}
-"""
+            text += f"{i}. {s}\n"
 
-        msg = await message.reply_text(text, parse_mode="html")
-
-        try:
-            await message.delete()
-        except:
-            pass
-
-        asyncio.create_task(
-            auto_delete(client, message.chat.id, [msg.id], 600)
-        )
+        await message.reply_text(text)
