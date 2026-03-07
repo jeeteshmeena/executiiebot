@@ -1,9 +1,13 @@
 from pyrogram import Client, filters
 from database.mongo import stories
 from datetime import datetime, timedelta
+from utils.cleanup import auto_delete
+import asyncio
 
 @Client.on_message(filters.command("latest"))
 async def latest_handler(client, message):
+
+    cmd = message.id
 
     since = datetime.utcnow() - timedelta(hours=24)
 
@@ -35,4 +39,13 @@ async def latest_handler(client, message):
 {story_list}
 """
 
-    await message.reply_text(text, parse_mode="html")
+    m = await message.reply_text(text, parse_mode="html")
+
+    await message.delete()
+
+    asyncio.create_task(auto_delete(
+        client,
+        message.chat.id,
+        [m.id],
+        600
+    ))
