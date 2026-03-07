@@ -2,22 +2,15 @@ from pyrogram import filters
 import asyncio
 from utils.cleanup import auto_delete
 
-
 ABOUT_TEXT = """
 🎭 <b>About</b>
 
-🤖 <b>ExecutiieBot</b> — Story Media Assistant
+🤖 <b>ExecutiieBot</b>
 
-📡 <a href="https://t.me/MeJeetX">@MeJeetX</a>
-
-<b>Admin:</b> <a href="https://t.me/MeJeetX">JeetX</a>
-
-<b>Host:</b> Render  
-<b>Database:</b> MongoDB
-
-<i>Version: V1.0</i>
+Admin: @MeJeetX  
+Host: Render  
+Database: MongoDB
 """
-
 
 def register_about(app):
 
@@ -26,8 +19,7 @@ def register_about(app):
 
         msg = await message.reply_text(
             ABOUT_TEXT,
-            parse_mode="html",
-            disable_web_page_preview=True
+            parse_mode="html"
         )
 
         try:
@@ -36,10 +28,5 @@ def register_about(app):
             pass
 
         asyncio.create_task(
-            auto_delete(
-                client,
-                message.chat.id,
-                [msg.id],
-                600
-            )
+            auto_delete(client, message.chat.id, [msg.id], 600)
         )
