@@ -1,21 +1,21 @@
-from pyrogram import filters
+from pyrogram import Client
+from pyrogram.types import CallbackQuery
 from database.mongo import episodes
 
-def register_range(bot):
 
-    @bot.on_callback_query(filters.regex("range_"))
+@Client.on_callback_query()
+async def send_range(client, query: CallbackQuery):
 
-    async def send_range(client, query):
+    data = query.data.split("|")
 
-        data = query.data.split("_")
+    story = data[1]
+    start = int(data[2])
+    end = int(data[3])
 
-        start = int(data[1])
-        end = int(data[2])
+    eps = episodes.find({
+        "story": story,
+        "episode": {"$gte": start, "$lte": end}
+    })
 
-        eps = episodes.find(
-            {"episode_start": {"$lte": end}, "episode_end": {"$gte": start}}
-        )
-
-        async for ep in eps:
-
-            await query.message.reply_audio(ep["file_id"])
+    async for ep in eps:
+        await query.message.reply_audio(ep["file_id"])
