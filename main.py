@@ -44,7 +44,8 @@ def home():
 async def main():
     await bot.start()
     print("Bot connected to Telegram")
-    await bot.idle()
+    from pyrogram import idle
+await idle()
 
 
 if __name__ == "__main__":
