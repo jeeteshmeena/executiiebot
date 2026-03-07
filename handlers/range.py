@@ -18,4 +18,4 @@ def register_range(bot):
 
         async for ep in eps:
 
-            await query.message.reply_document(ep["file_id"])
+            await query.message.reply_audio(ep["file_id"])
