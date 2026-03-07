@@ -1,46 +1,31 @@
-from pyrogram import filters
+from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database.mongo import stories
-from utils.cleanup import auto_delete
-import asyncio
+from db import episodes
 
-TEXT = """
-📚 <b>Available Stories</b>
 
-<i>Select a story below to explore episodes.</i>
-"""
+def register_stories(bot: Client):
 
-def register_stories(app):
+    @bot.on_message(filters.command("stories"))
+    async def stories_list(client, message):
 
-    @app.on_message(filters.command("stories"))
-    async def stories_handler(client, message):
+        stories = await episodes.distinct("story")
 
-        cursor = stories.find().sort("title", 1)
+        if not stories:
+            await message.reply_text("No stories found.")
+            return
 
         buttons = []
 
-        async for s in cursor:
-            buttons.append(
-                [InlineKeyboardButton(
-                    f"📖 {s['title']}",
-                    callback_data=f"story|{s['title']}"
-                )]
-            )
+        for s in stories:
 
-        msg = await message.reply_text(
-            TEXT,
-            parse_mode="html",
+            buttons.append([
+                InlineKeyboardButton(
+                    s,
+                    callback_data=f"story_{s}"
+                )
+            ])
+
+        await message.reply_text(
+            "📚 Available Stories",
             reply_markup=InlineKeyboardMarkup(buttons)
         )
-
-        try:
-            await message.delete()
-        except:
-            pass
-
-        asyncio.create_task(auto_delete(
-            client,
-            message.chat.id,
-            [msg.id],
-            600
-        ))
