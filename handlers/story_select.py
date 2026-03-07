@@ -1,52 +1,56 @@
-from pyrogram import Client
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.mongo import episodes
 
-@Client.on_callback_query()
-async def story_select(client, query: CallbackQuery):
+def register_story_select(app):
 
-    if not query.data.startswith("story"):
-        return
+    @app.on_callback_query()
+    async def story_select(client, query):
 
-    story = query.data.split("|")[1]
+        if not query.data.startswith("story"):
+            return
 
-    total = await episodes.count_documents({"story": story})
+        story = query.data.split("|")[1]
 
-    ranges = []
+        total = await episodes.count_documents({"story": story})
 
-    start = 1
-    while start <= total:
-        end = min(start + 99, total)
-        ranges.append((start, end))
-        start += 100
+        ranges = []
+        start = 1
 
-    buttons = []
+        while start <= total:
+            end = min(start + 99, total)
+            ranges.append((start, end))
+            start += 100
 
-    for i in range(0, len(ranges), 2):
+        buttons = []
 
-        row = []
+        for i in range(0, len(ranges), 2):
 
-        r1 = ranges[i]
-        row.append(
-            InlineKeyboardButton(
-                f"{r1[0]}-{r1[1]}",
-                callback_data=f"range|{story}|{r1[0]}|{r1[1]}"
-            )
-        )
+            row = []
 
-        if i+1 < len(ranges):
-            r2 = ranges[i+1]
+            r1 = ranges[i]
+
             row.append(
                 InlineKeyboardButton(
-                    f"{r2[0]}-{r2[1]}",
-                    callback_data=f"range|{story}|{r2[0]}|{r2[1]}"
+                    f"{r1[0]}-{r1[1]}",
+                    callback_data=f"range|{story}|{r1[0]}|{r1[1]}"
                 )
             )
 
-        buttons.append(row)
+            if i + 1 < len(ranges):
 
-    await query.message.reply_text(
-        f"📚 <b>{story}</b>\nEpisodes: <b>{total}</b>",
-        parse_mode="html",
-        reply_markup=InlineKeyboardMarkup(buttons)
-    )
+                r2 = ranges[i+1]
+
+                row.append(
+                    InlineKeyboardButton(
+                        f"{r2[0]}-{r2[1]}",
+                        callback_data=f"range|{story}|{r2[0]}|{r2[1]}"
+                    )
+                )
+
+            buttons.append(row)
+
+        await query.message.reply_text(
+            f"📚 <b>{story}</b>\nEpisodes: <b>{total}</b>",
+            parse_mode="html",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
