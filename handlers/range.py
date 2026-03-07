@@ -1,5 +1,4 @@
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from db import episodes
 
 
@@ -16,7 +15,6 @@ def register_range(bot: Client):
 
         await query.answer()
 
-        # strict story filter + episode sorting
         eps = []
 
         async for ep in episodes.find(
@@ -34,12 +32,7 @@ def register_range(bot: Client):
 
         for ep in eps:
 
-            file_id = ep["file_id"]
-
             try:
-
-                await query.message.reply_audio(file_id)
-
+                await query.message.reply_audio(ep["file_id"])
             except Exception:
-
-                await query.message.reply_document(file_id)
+                await query.message.reply_document(ep["file_id"])
