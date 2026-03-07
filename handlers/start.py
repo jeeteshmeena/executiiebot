@@ -1,5 +1,8 @@
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from utils.cleanup import auto_delete
+import asyncio
+
 
 WELCOME_TEXT = """
 ✨ <b>Welcome, {name}!</b>
@@ -16,22 +19,43 @@ WELCOME_TEXT = """
 <a href="https://t.me/MeJeetX">@MeJeetX</a>
 """
 
-@Client.on_message(filters.command("start"))
-async def start_handler(client, message):
-    name = message.from_user.first_name if message.from_user else "Friend"
 
-    buttons = InlineKeyboardMarkup(
-        [
+def register_start(app):
+
+    @app.on_message(filters.command("start"))
+    async def start_handler(client, message):
+
+        name = message.from_user.first_name if message.from_user else "Friend"
+
+        buttons = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("⭐ Channel ⭐", url="https://t.me/MeJeetX"),
-                InlineKeyboardButton("⚡ Group ⚡", url="https://t.me/+HvKfFsPziO42OTNl"),
+                [
+                    InlineKeyboardButton(
+                        "⭐ Channel ⭐",
+                        url="https://t.me/MeJeetX"
+                    ),
+                    InlineKeyboardButton(
+                        "⚡ Group ⚡",
+                        url="https://t.me/+HvKfFsPziO42OTNl"
+                    )
+                ]
             ]
-        ]
-    )
+        )
 
-    await message.reply_text(
-        WELCOME_TEXT.format(name=name),
-        parse_mode="html",
-        disable_web_page_preview=True,
-        reply_markup=buttons,
-    )
+        msg = await message.reply_text(
+            WELCOME_TEXT.format(name=name),
+            parse_mode="html",
+            disable_web_page_preview=True,
+            reply_markup=buttons
+        )
+
+        await message.delete()
+
+        asyncio.create_task(
+            auto_delete(
+                client,
+                message.chat.id,
+                [msg.id],
+                600
+            )
+        )
