@@ -1,37 +1,40 @@
-from pyrogram import Client, filters
+from pyrogram import filters
 from database.mongo import stories
 from datetime import datetime, timedelta
-from utils.cleanup import auto_delete
 import asyncio
+from utils.cleanup import auto_delete
 
-@Client.on_message(filters.command("latest"))
-async def latest_handler(client, message):
+def register_latest(app):
 
-    cmd = message.id
+    @app.on_message(filters.command("latest"))
+    async def latest_handler(client, message):
 
-    since = datetime.utcnow() - timedelta(hours=24)
+        since = datetime.utcnow() - timedelta(hours=24)
 
-    cursor = stories.find({
-        "updated_at": {"$gte": since}
-    })
+        cursor = stories.find({
+            "updated_at": {"$gte": since}
+        })
 
-    names = []
+        names = []
 
-    async for s in cursor:
-        names.append(s["title"])
+        async for s in cursor:
+            names.append(s["title"])
 
-    if not names:
+        if not names:
 
-        text = """
+            text = """
 📢 <b>Here are the latest uploads!</b>
 
 <i>No new stories uploaded in the last 24 hours.</i>
 """
-    else:
 
-        story_list = "\n".join([f"{i+1}. {n}" for i,n in enumerate(names)])
+        else:
 
-        text = f"""
+            story_list = "\n".join(
+                [f"{i+1}. {n}" for i, n in enumerate(names)]
+            )
+
+            text = f"""
 📢 <b>Here are the latest uploads!</b>
 
 🆕 <b>We've gathered the newest releases for you.</b>
@@ -39,13 +42,13 @@ async def latest_handler(client, message):
 {story_list}
 """
 
-    m = await message.reply_text(text, parse_mode="html")
+        msg = await message.reply_text(text, parse_mode="html")
 
-    await message.delete()
+        try:
+            await message.delete()
+        except:
+            pass
 
-    asyncio.create_task(auto_delete(
-        client,
-        message.chat.id,
-        [m.id],
-        600
-    ))
+        asyncio.create_task(
+            auto_delete(client, message.chat.id, [msg.id], 600)
+        )
