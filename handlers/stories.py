@@ -1,22 +1,5 @@
-from pyrogram import filters
-from database.mongo import stories
+TEXT = """
+📚 <b>Available Stories</b>
 
-def register_stories(bot):
-
-    @bot.on_message(filters.command("stories"))
-    async def stories_list(client, message):
-
-        text = "📚 Available Stories\n\n"
-
-        i = 1
-
-        async for s in stories.find():
-
-            text += f"{i}. {s['story_name']}\n"
-
-            i += 1
-
-        if i == 1:
-            text += "No stories found."
-
-        await message.reply_text(text)
+<i>Select a story below to explore episodes.</i>
+"""
