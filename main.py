@@ -4,7 +4,6 @@ import threading
 
 from flask import Flask
 from pyrogram import Client, idle
-from pyrogram.errors import FloodWait
 
 # handlers
 from handlers.start import register_start
@@ -20,18 +19,12 @@ from handlers.story_select import register_story_select
 from indexer import index_channel
 
 
-# =============================
-# ENV VARIABLES
-# =============================
+print("🚀 ExecutiieBot starting...")
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-
-# =============================
-# TELEGRAM BOT
-# =============================
 
 bot = Client(
     "ExecutiieBot",
@@ -41,10 +34,7 @@ bot = Client(
 )
 
 
-# =============================
-# REGISTER HANDLERS
-# =============================
-
+# register handlers
 register_start(bot)
 register_help(bot)
 register_about(bot)
@@ -55,74 +45,47 @@ register_range(bot)
 register_story_select(bot)
 
 
-print("ExecutiieBot started")
+print("ExecutiieBot handlers loaded")
 
 
-# =============================
-# FLASK SERVER (Render Health)
-# =============================
-
-web = Flask(__name__)
+# Flask health server for Render
+app = Flask(__name__)
 
 
-@web.route("/")
+@app.route("/")
 def home():
-    return "ExecutiieBot is running"
+    return "ExecutiieBot running"
 
 
 def run_web():
     port = int(os.getenv("PORT", 10000))
-    web.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)
 
-
-# =============================
-# BOT RUNNER
-# =============================
 
 async def run_bot():
 
-    while True:
+    await bot.start()
 
-        try:
+    print("🤖 Bot connected to Telegram")
 
-            await bot.start()
+    try:
+        await index_channel(bot)
+        print("📚 Channel indexing complete")
+    except Exception as e:
+        print("Index error:", e)
 
-            print("Bot connected to Telegram")
+    print("✅ Bot is now running")
 
-            # Channel auto indexing
-            await index_channel(bot)
-
-            print("Channel indexing complete")
-
-            await idle()
-
-            await bot.stop()
-
-        except FloodWait as e:
-
-            wait_time = int(e.value)
-
-            print(f"FloodWait detected. Waiting {wait_time} seconds")
-
-            await asyncio.sleep(wait_time)
-
-        except Exception as err:
-
-            print("Bot crashed:", err)
-
-            await asyncio.sleep(10)
+    await idle()
 
 
-# =============================
-# MAIN
-# =============================
+def start():
+
+    threading.Thread(target=run_web).start()
+
+    asyncio.run(run_bot())
+
 
 if __name__ == "__main__":
 
-    print("Starting ExecutiieBot...")
-
-    # start flask health server
-    threading.Thread(target=run_web).start()
-
-    # start telegram bot
-    asyncio.run(run_bot())
+    start()
