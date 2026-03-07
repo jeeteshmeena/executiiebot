@@ -2,7 +2,6 @@ from pyrogram import filters
 import asyncio
 from utils.cleanup import auto_delete
 
-
 REQUEST_CHANNEL = -1003714374498
 
 OK = """
@@ -16,7 +15,6 @@ NEED = """
 <code>/request Yakshini</code>
 <code>/request Saaya A Cursed Love Story</code>
 """
-
 
 def register_request(app):
 
@@ -37,13 +35,9 @@ def register_request(app):
             except:
                 pass
 
-            asyncio.create_task(auto_delete(
-                client,
-                message.chat.id,
-                [msg.id],
-                600
-            ))
-
+            asyncio.create_task(
+                auto_delete(client, message.chat.id, [msg.id], 600)
+            )
             return
 
         story = text[1]
@@ -63,9 +57,6 @@ def register_request(app):
         except:
             pass
 
-        asyncio.create_task(auto_delete(
-            client,
-            message.chat.id,
-            [msg.id],
-            600
-        ))
+        asyncio.create_task(
+            auto_delete(client, message.chat.id, [msg.id], 600)
+        )
