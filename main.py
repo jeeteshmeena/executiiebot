@@ -14,14 +14,16 @@ from handlers.range import register_range
 
 from indexer.channel_indexer import register_indexer
 
-# Fix asyncio loop issue
+
 asyncio.set_event_loop(asyncio.new_event_loop())
+
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
     return "ExecutiieBot running"
+
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
@@ -32,12 +34,14 @@ API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
+
 bot = Client(
     "ExecutiieBot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
+
 
 def main():
 
