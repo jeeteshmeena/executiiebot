@@ -1,56 +1,59 @@
+from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database.mongo import episodes
+from db import episodes
 
-def register_story_select(app):
 
-    @app.on_callback_query()
-    async def story_select(client, query):
+def register_story_select(bot: Client):
 
-        if not query.data.startswith("story"):
-            return
+    @bot.on_callback_query(filters.regex("^story_"))
+    async def story_selected(client, query):
 
-        story = query.data.split("|")[1]
+        story = query.data.split("_", 1)[1]
+
+        await query.answer()
 
         total = await episodes.count_documents({"story": story})
 
+        if total == 0:
+            await query.message.reply_text("No episodes found.")
+            return
+
         ranges = []
+
         start = 1
 
         while start <= total:
-            end = min(start + 99, total)
+
+            end = start + 99
+
+            if end > total:
+                end = total
+
             ranges.append((start, end))
+
             start += 100
 
         buttons = []
 
-        for i in range(0, len(ranges), 2):
+        row = []
 
-            row = []
-
-            r1 = ranges[i]
+        for r in ranges:
 
             row.append(
                 InlineKeyboardButton(
-                    f"{r1[0]}-{r1[1]}",
-                    callback_data=f"range|{story}|{r1[0]}|{r1[1]}"
+                    f"{r[0]}-{r[1]}",
+                    callback_data=f"range_{story}_{r[0]}_{r[1]}"
                 )
             )
 
-            if i + 1 < len(ranges):
+            if len(row) == 2:
+                buttons.append(row)
+                row = []
 
-                r2 = ranges[i+1]
-
-                row.append(
-                    InlineKeyboardButton(
-                        f"{r2[0]}-{r2[1]}",
-                        callback_data=f"range|{story}|{r2[0]}|{r2[1]}"
-                    )
-                )
-
+        if row:
             buttons.append(row)
 
         await query.message.reply_text(
-            f"📚 <b>{story}</b>\nEpisodes: <b>{total}</b>",
-            parse_mode="html",
+            f"🎧 {story} Episodes",
             reply_markup=InlineKeyboardMarkup(buttons)
         )
