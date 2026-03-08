@@ -1,42 +1,44 @@
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database.mongo import stories
+from db import episodes
 
-NOT_FOUND = """
-❗️ <b>File Not Found</b>
 
-📝 <i>Check the spelling or try searching with the exact title.</i>
-"""
+def register_search(bot):
 
-@Client.on_message(filters.text & ~filters.command(["start","help","about","request","latest","stories"]))
-async def search(client, message):
+    @bot.on_message(filters.text & ~filters.command(["start", "help", "stories", "latest", "about", "request"]))
+    async def search_handler(client, message):
 
-    query = message.text.strip()
+        query = message.text.strip()
 
-    story = await stories.find_one({
-        "title": {"$regex": query, "$options": "i"}
-    })
+        story = await episodes.find_one({
+            "story": {"$regex": f"^{query}$", "$options": "i"}
+        })
 
-    if not story:
-
-        buttons = InlineKeyboardMarkup(
-            [
+        if not story:
+            buttons = InlineKeyboardMarkup(
                 [
-                    InlineKeyboardButton(
-                        "🔎 Google Search",
-                        url=f"https://www.google.com/search?q={query}+story+audio"
-                    ),
-                    InlineKeyboardButton(
-                        "📩 Contact Admin",
-                        url="https://t.me/MeJeetX"
-                    )
+                    [
+                        InlineKeyboardButton(
+                            "🔎 Search on Google",
+                            url=f"https://www.google.com/search?q={query}+story"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "📩 Contact Admin",
+                            url="https://t.me/MeJeetX"
+                        )
+                    ]
                 ]
-            ]
-        )
+            )
+
+            await message.reply_text(
+                "❗️ **File Not Found**\n\n"
+                "📝 Check the spelling or try searching with the exact title.",
+                reply_markup=buttons
+            )
+            return
 
         await message.reply_text(
-            NOT_FOUND,
-            parse_mode="html",
-            reply_markup=buttons
+            f"📚 **{query} found!**\n\nUse /stories to view episodes."
         )
-        return
