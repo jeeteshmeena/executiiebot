@@ -8,55 +8,57 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 async def index_channel(bot):
 
     try:
-
+        # first resolve the chat
         chat = await bot.get_chat(CHANNEL_ID)
-
-        print(f"Indexing channel: {chat.title}")
+        print(f"Connected to channel: {chat.title}")
 
     except Exception as e:
-
         print("Channel access error:", e)
-
         return
 
-    async for msg in bot.get_chat_history(CHANNEL_ID):
+    try:
 
-        if not (msg.audio or msg.document or msg.voice):
-            continue
+        async for msg in bot.get_chat_history(chat.id):
 
-        caption = msg.caption or ""
+            if not (msg.audio or msg.document or msg.voice):
+                continue
 
-        match = re.search(r"(.*)\s+Episode\s+(\d+)", caption, re.I)
+            caption = msg.caption or ""
 
-        if not match:
-            continue
+            match = re.search(r"(.*)\s+Episode\s+(\d+)", caption, re.I)
 
-        story = match.group(1).strip()
-        episode = int(match.group(2))
+            if not match:
+                continue
 
-        file_id = None
+            story = match.group(1).strip()
+            episode = int(match.group(2))
 
-        if msg.audio:
-            file_id = msg.audio.file_id
-        elif msg.document:
-            file_id = msg.document.file_id
-        elif msg.voice:
-            file_id = msg.voice.file_id
+            file_id = None
 
-        if not file_id:
-            continue
+            if msg.audio:
+                file_id = msg.audio.file_id
+            elif msg.document:
+                file_id = msg.document.file_id
+            elif msg.voice:
+                file_id = msg.voice.file_id
 
-        await episodes.update_one(
-            {"story": story, "episode": episode},
-            {
-                "$set": {
-                    "story": story,
-                    "episode": episode,
-                    "file_id": file_id,
-                    "msg_id": msg.id
-                }
-            },
-            upsert=True
-        )
+            if not file_id:
+                continue
 
-        print(f"Indexed {story} episode {episode}")
+            await episodes.update_one(
+                {"story": story, "episode": episode},
+                {
+                    "$set": {
+                        "story": story,
+                        "episode": episode,
+                        "file_id": file_id,
+                        "msg_id": msg.id
+                    }
+                },
+                upsert=True
+            )
+
+            print(f"Indexed {story} episode {episode}")
+
+    except Exception as e:
+        print("History read error:", e)
