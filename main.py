@@ -31,7 +31,6 @@ bot = Client(
 )
 
 
-# register handlers
 register_start(bot)
 register_help(bot)
 register_about(bot)
@@ -45,26 +44,18 @@ register_story_select(bot)
 print("ExecutiieBot started")
 
 
-# =========================
-# Flask health server
-# =========================
-
-web = Flask(__name__)
+app = Flask(__name__)
 
 
-@web.route("/")
+@app.route("/")
 def home():
     return "ExecutiieBot running"
 
 
-def run_web():
+def run_flask():
     port = int(os.getenv("PORT", 10000))
-    web.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)
 
-
-# =========================
-# Bot runner
-# =========================
 
 async def run_bot():
 
@@ -76,38 +67,29 @@ async def run_bot():
 
             print("Bot connected to Telegram")
 
-            # IMPORTANT FIX
             asyncio.create_task(index_channel(bot))
 
-            print("Channel indexing running in background")
+            print("Channel indexing started")
 
             await idle()
 
-            await bot.stop()
-
         except FloodWait as e:
 
-            wait_time = int(e.value)
+            wait = int(e.value)
 
-            print(f"FloodWait: waiting {wait_time} seconds")
+            print(f"FloodWait {wait}")
 
-            await asyncio.sleep(wait_time)
+            await asyncio.sleep(wait)
 
-        except Exception as err:
+        except Exception as e:
 
-            print("Bot crashed:", err)
+            print("Bot error:", e)
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
-
-# =========================
-# main
-# =========================
 
 if __name__ == "__main__":
 
-    print("Starting ExecutiieBot...")
-
-    threading.Thread(target=run_web).start()
+    threading.Thread(target=run_flask).start()
 
     asyncio.run(run_bot())
