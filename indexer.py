@@ -2,20 +2,25 @@ import re
 import os
 from db import episodes
 
-# Channel ID / Username from environment
+# Read from environment (supports @username or -100... id)
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 async def index_channel(bot):
+    if not CHANNEL_ID:
+        print("CHANNEL_ID is not set in environment variables")
+        return
+
     try:
         async for msg in bot.get_chat_history(CHANNEL_ID):
 
+            # Only process media messages
             if not (msg.audio or msg.document or msg.voice):
                 continue
 
             caption = msg.caption or ""
 
+            # Expect format: "StoryName Episode 1"
             match = re.search(r"(.+)\s+Episode\s+(\d+)", caption, re.I)
-
             if not match:
                 continue
 
