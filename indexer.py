@@ -1,31 +1,20 @@
 import re
 import os
-from database.mongo import episodes
+from db import episodes
 
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-
+# Channel ID / Username from environment
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 async def index_channel(bot):
-
     try:
-        # first resolve the chat
-        chat = await bot.get_chat(CHANNEL_ID)
-        print(f"Connected to channel: {chat.title}")
-
-    except Exception as e:
-        print("Channel access error:", e)
-        return
-
-    try:
-
-        async for msg in bot.get_chat_history(chat.id):
+        async for msg in bot.get_chat_history(CHANNEL_ID):
 
             if not (msg.audio or msg.document or msg.voice):
                 continue
 
             caption = msg.caption or ""
 
-            match = re.search(r"(.*)\s+Episode\s+(\d+)", caption, re.I)
+            match = re.search(r"(.+)\s+Episode\s+(\d+)", caption, re.I)
 
             if not match:
                 continue
@@ -58,7 +47,7 @@ async def index_channel(bot):
                 upsert=True
             )
 
-            print(f"Indexed {story} episode {episode}")
+            print(f"Indexed episode {episode} for {story}")
 
     except Exception as e:
-        print("History read error:", e)
+        print("Channel access error:", e)
