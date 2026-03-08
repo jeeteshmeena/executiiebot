@@ -31,6 +31,7 @@ bot = Client(
 )
 
 
+# register handlers
 register_start(bot)
 register_help(bot)
 register_about(bot)
@@ -44,18 +45,26 @@ register_story_select(bot)
 print("ExecutiieBot started")
 
 
+# =========================
+# Flask health server
+# =========================
+
 web = Flask(__name__)
 
 
 @web.route("/")
 def home():
-    return "ExecutiieBot is running"
+    return "ExecutiieBot running"
 
 
 def run_web():
     port = int(os.getenv("PORT", 10000))
     web.run(host="0.0.0.0", port=port)
 
+
+# =========================
+# Bot runner
+# =========================
 
 async def run_bot():
 
@@ -67,9 +76,10 @@ async def run_bot():
 
             print("Bot connected to Telegram")
 
-            await index_channel(bot)
+            # IMPORTANT FIX
+            asyncio.create_task(index_channel(bot))
 
-            print("Channel indexing complete")
+            print("Channel indexing running in background")
 
             await idle()
 
@@ -89,6 +99,10 @@ async def run_bot():
 
             await asyncio.sleep(10)
 
+
+# =========================
+# main
+# =========================
 
 if __name__ == "__main__":
 
