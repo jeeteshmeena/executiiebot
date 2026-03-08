@@ -1,8 +1,8 @@
 import re
-from db import episodes
+import os
+from database.mongo import episodes
 
-# यहाँ अपना database channel id डालो
-CHANNEL_ID = -1003714374498
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
 
 async def index_channel(bot):
