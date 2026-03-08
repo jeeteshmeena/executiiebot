@@ -1,9 +1,11 @@
 import os
+import asyncio
 import threading
-from flask import Flask
-from pyrogram import Client, filters
 
-# handlers
+from flask import Flask
+from pyrogram import Client, idle
+from pyrogram.errors import FloodWait
+
 from handlers.start import register_start
 from handlers.help import register_help
 from handlers.about import register_about
@@ -13,11 +15,8 @@ from handlers.stories import register_stories
 from handlers.range import register_range
 from handlers.story_select import register_story_select
 
-# indexer
 from indexer import index_channel
 
-
-print("🚀 ExecutiieBot starting...")
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
@@ -32,10 +31,6 @@ bot = Client(
 )
 
 
-# =====================
-# REGISTER HANDLERS
-# =====================
-
 register_start(bot)
 register_help(bot)
 register_about(bot)
@@ -45,48 +40,60 @@ register_stories(bot)
 register_range(bot)
 register_story_select(bot)
 
-print("✅ Handlers loaded")
+
+print("ExecutiieBot started")
 
 
-# =====================
-# HEALTH SERVER (Render)
-# =====================
-
-app = Flask(__name__)
+web = Flask(__name__)
 
 
-@app.route("/")
+@web.route("/")
 def home():
-    return "ExecutiieBot running"
+    return "ExecutiieBot is running"
 
 
 def run_web():
     port = int(os.getenv("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    web.run(host="0.0.0.0", port=port)
 
 
-# =====================
-# BOT START
-# =====================
+async def run_bot():
 
-@bot.on_message(filters.command("ping"))
-async def ping(client, message):
-    await message.reply_text("🏓 Bot alive")
+    while True:
 
+        try:
 
-async def startup():
+            await bot.start()
 
-    print("🤖 Bot connected")
+            print("Bot connected to Telegram")
 
-    try:
-        await index_channel(bot)
-        print("📚 Channel indexed")
-    except Exception as e:
-        print("Index error:", e)
+            await index_channel(bot)
+
+            print("Channel indexing complete")
+
+            await idle()
+
+            await bot.stop()
+
+        except FloodWait as e:
+
+            wait_time = int(e.value)
+
+            print(f"FloodWait: waiting {wait_time} seconds")
+
+            await asyncio.sleep(wait_time)
+
+        except Exception as err:
+
+            print("Bot crashed:", err)
+
+            await asyncio.sleep(10)
 
 
 if __name__ == "__main__":
 
+    print("Starting ExecutiieBot...")
+
     threading.Thread(target=run_web).start()
 
-    bot.run(startup())
+    asyncio.run(run_bot())
