@@ -7,6 +7,18 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
 async def index_channel(bot):
 
+    try:
+
+        chat = await bot.get_chat(CHANNEL_ID)
+
+        print(f"Indexing channel: {chat.title}")
+
+    except Exception as e:
+
+        print("Channel access error:", e)
+
+        return
+
     async for msg in bot.get_chat_history(CHANNEL_ID):
 
         if not (msg.audio or msg.document or msg.voice):
